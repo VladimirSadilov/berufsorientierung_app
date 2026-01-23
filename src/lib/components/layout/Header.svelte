@@ -104,21 +104,19 @@
 
 	/**
 	 * Opens admin tab via window.open() so it can be closed via window.close()
-	 * Uses preventDefault to ensure the tab is "opened-by-script"
+	 * Only uses preventDefault if popup succeeded, otherwise lets default link behavior work
 	 */
 	function openAdminTab(event: MouseEvent, href: string) {
 		if (href !== '/admin') {
 			return;
 		}
-		event.preventDefault();
-		closeMobileMenu();
-		const w = window.open('/admin', '_blank', 'noopener,noreferrer');
+		const w = window.open('/admin', '_blank');
 		if (w) {
+			event.preventDefault();
+			closeMobileMenu();
 			w.focus();
-		} else {
-			// Fallback if popup was blocked
-			window.location.href = '/admin';
 		}
+		// If popup was blocked (w === null), do NOT preventDefault - let default link behavior work as fallback
 	}
 
 	/**
@@ -151,7 +149,6 @@
 							class:active={$page.url.pathname === link.href}
 							aria-current={$page.url.pathname === link.href ? 'page' : undefined}
 							target={link.href === '/admin' ? '_blank' : undefined}
-							rel={link.href === '/admin' ? 'noopener noreferrer' : undefined}
 							onclick={(e) => openAdminTab(e, link.href)}
 						>
 							{link.label}
@@ -243,7 +240,6 @@
 								}}
 								aria-current={$page.url.pathname === link.href ? 'page' : undefined}
 								target={link.href === '/admin' ? '_blank' : undefined}
-								rel={link.href === '/admin' ? 'noopener noreferrer' : undefined}
 							>
 								{link.label}
 							</a>

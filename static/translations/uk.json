@@ -88,6 +88,11 @@
 	},
 	"auth": {
 		"loginTitle": "Вхід",
+		"loginButton": "Увійти",
+		"registerButton": "Створити акаунт",
+		"noAccount": "Немає облікового запису?",
+		"forgotPassword": "Забули пароль?",
+		"loggingIn": "Вхід...",
 		"registerTitle": "Створити акаунт",
 		"registerSubtitle": "Створіть обліковий запис для участі в заходах Berufsorientierung",
 		"alreadyHaveAccount": "Вже є обліковий запис?",
@@ -169,7 +174,8 @@
 			"open": "Реєстрація відкрита",
 			"full": "Немає місць",
 			"deadlinePassed": "Термін минув",
-			"registered": "Ви записані"
+			"registered": "Ви записані",
+			"past": "Минуле"
 		},
 		"noSpotsLeft": "Місць не залишилося",
 		"registrationClosed": "Реєстрація закрита",
@@ -510,6 +516,7 @@
 			"statusDraft": "Чернетка",
 			"statusActive": "Активний",
 			"statusCancelled": "Скасовано",
+			"statusPast": "Минуле",
 			"dateFrom": "Дата з",
 			"dateTo": "Дата до",
 			"resetFilters": "Скинути фільтри",

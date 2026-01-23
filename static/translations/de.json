@@ -90,6 +90,11 @@
 	},
 	"auth": {
 		"loginTitle": "Anmelden",
+		"loginButton": "Anmelden",
+		"registerButton": "Konto erstellen",
+		"noAccount": "Noch kein Konto?",
+		"forgotPassword": "Passwort vergessen?",
+		"loggingIn": "Anmelden...",
 		"registerTitle": "Konto erstellen",
 		"registerSubtitle": "Erstellen Sie ein Konto für die Teilnahme an Berufsorientierung-Veranstaltungen",
 		"alreadyHaveAccount": "Bereits registriert?",
@@ -171,7 +176,8 @@
 			"open": "Anmeldung offen",
 			"full": "Ausgebucht",
 			"deadlinePassed": "Frist abgelaufen",
-			"registered": "Sie sind angemeldet"
+			"registered": "Sie sind angemeldet",
+			"past": "Vergangen"
 		},
 		"noSpotsLeft": "Keine Plätze verfügbar",
 		"registrationClosed": "Anmeldung geschlossen",
@@ -512,6 +518,7 @@
 			"statusDraft": "Entwurf",
 			"statusActive": "Aktiv",
 			"statusCancelled": "Abgesagt",
+			"statusPast": "Vergangen",
 			"dateFrom": "Datum von",
 			"dateTo": "Datum bis",
 			"resetFilters": "Filter zurücksetzen",

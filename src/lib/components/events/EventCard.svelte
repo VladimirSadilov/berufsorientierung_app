@@ -32,6 +32,18 @@
 		? (event.registeredCount / event.max_participants) * 100
 		: 0;
 
+	// Определение прошедшего мероприятия (end_date <= now или date <= now)
+	$: isPastEvent = (() => {
+		const now = new Date();
+		const eventEndDate = event.end_date ? new Date(event.end_date) : new Date(event.date);
+		const endMs = eventEndDate.getTime();
+		// Если дата невалидна - fail-closed (лучше показать "Прошедшее" и скрыть CTA)
+		if (Number.isNaN(endMs)) {
+			return true;
+		}
+		return eventEndDate <= now;
+	})();
+
 	// Определение статуса регистрации
 	$: registrationStatus = getRegistrationStatus();
 
@@ -39,7 +51,8 @@
 	$: progressBarColor = getProgressBarColor();
 
 	// Определение можно ли записаться
-	$: canRegister = !event.isDeadlinePassed && event.spotsLeft > 0 && !event.isUserRegistered;
+	$: canRegister =
+		!isPastEvent && !event.isDeadlinePassed && event.spotsLeft > 0 && !event.isUserRegistered;
 
 	/**
 	 * Получает переведённое поле с fallback на немецкий
@@ -66,6 +79,9 @@
 	function getRegistrationStatus(): string {
 		if (event.isUserRegistered) {
 			return $_('events.status.registered');
+		}
+		if (isPastEvent) {
+			return $_('events.status.past');
 		}
 		if (event.isDeadlinePassed) {
 			return $_('events.status.deadlinePassed');
@@ -277,6 +293,12 @@
 					</svg>
 					{registrationStatus}
 				</span>
+			{:else if isPastEvent}
+				<span
+					class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+				>
+					{registrationStatus}
+				</span>
 			{:else if event.isDeadlinePassed}
 				<span
 					class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
@@ -329,7 +351,9 @@
 					</Button>
 				{:else}
 					<Button variant="secondary" type="button" fullWidth disabled>
-						{#if event.isDeadlinePassed}
+						{#if isPastEvent}
+							{$_('events.status.past')}
+						{:else if event.isDeadlinePassed}
 							{$_('events.status.deadlinePassed')}
 						{:else}
 							{$_('events.status.full')}
@@ -338,17 +362,29 @@
 				{/if}
 			{:else}
 				<!-- Пользователь не авторизован -->
-				<Button
-					variant="primary"
-					type="button"
-					fullWidth
-					on:click={(e) => {
-						e.stopPropagation();
-						handleLoginClick();
-					}}
-				>
-					{$_('events.loginToRegister')}
-				</Button>
+				{#if canRegister}
+					<Button
+						variant="primary"
+						type="button"
+						fullWidth
+						on:click={(e) => {
+							e.stopPropagation();
+							handleLoginClick();
+						}}
+					>
+						{$_('events.loginToRegister')}
+					</Button>
+				{:else}
+					<Button variant="secondary" type="button" fullWidth disabled>
+						{#if isPastEvent}
+							{$_('events.status.past')}
+						{:else if event.isDeadlinePassed}
+							{$_('events.status.deadlinePassed')}
+						{:else}
+							{$_('events.status.full')}
+						{/if}
+					</Button>
+				{/if}
 			{/if}
 		</div>
 	</div>

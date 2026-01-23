@@ -102,15 +102,45 @@
 	}
 
 	/**
-	 * Получить цвет badge для статуса
+	 * Проверка прошедшего мероприятия (end_date <= now или date <= now)
 	 */
-	function getStatusColor(status: EventStatus): string {
+	function isPastEvent(event: EventWithStats): boolean {
+		const now = new Date();
+		const eventEndDate = event.end_date ? new Date(event.end_date) : new Date(event.date);
+		const endMs = eventEndDate.getTime();
+		// В админке если дата невалидна - не помечаем как прошедшее (purely display)
+		if (Number.isNaN(endMs)) {
+			return false;
+		}
+		return eventEndDate <= now;
+	}
+
+	/**
+	 * Получить цвет badge для статуса (с учетом прошедшего мероприятия)
+	 */
+	function getStatusColor(status: EventStatus, event?: EventWithStats): string {
+		// Если мероприятие активное, но прошедшее — серый цвет
+		if (status === 'active' && event && isPastEvent(event)) {
+			return 'bg-gray-100 text-gray-800';
+		}
 		const colors: Record<EventStatus, string> = {
 			draft: 'bg-gray-100 text-gray-800',
 			active: 'bg-green-100 text-green-800',
 			cancelled: 'bg-red-100 text-red-800',
 		};
 		return colors[status];
+	}
+
+	/**
+	 * Получить текст статуса (с учетом прошедшего мероприятия)
+	 */
+	function getStatusText(event: EventWithStats): string {
+		if (event.status === 'active' && isPastEvent(event)) {
+			return $_('admin.events.statusPast');
+		}
+		return $_(
+			`admin.events.status${event.status.charAt(0).toUpperCase() + event.status.slice(1)}`
+		);
 	}
 
 	/**
@@ -514,12 +544,11 @@
 					<td class="px-6 py-4 whitespace-nowrap">
 						<span
 							class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {getStatusColor(
-								event.status
+								event.status,
+								event
 							)}"
 						>
-							{$_(
-								`admin.events.status${event.status.charAt(0).toUpperCase() + event.status.slice(1)}`
-							)}
+							{getStatusText(event)}
 						</span>
 					</td>
 
@@ -716,12 +745,11 @@
 				</h3>
 				<span
 					class="ml-2 px-2 py-1 text-xs leading-5 font-semibold rounded-full {getStatusColor(
-						event.status
+						event.status,
+						event
 					)}"
 				>
-					{$_(
-						`admin.events.status${event.status.charAt(0).toUpperCase() + event.status.slice(1)}`
-					)}
+					{getStatusText(event)}
 				</span>
 			</div>
 

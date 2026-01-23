@@ -113,7 +113,7 @@
 	<!-- Секция предстоящих мероприятий -->
 	<section class="container mx-auto px-4 py-8 sm:py-12">
 		<!-- Заголовок секции -->
-		<div class="mb-8">
+		<div class="mb-8 lg:text-center lg:max-w-3xl lg:mx-auto">
 			<h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
 				{$_('homepage.events.title')}
 			</h2>
@@ -125,7 +125,9 @@
 		<!-- Список мероприятий или Empty state -->
 		{#if data.events.length > 0}
 			<!-- Grid мероприятий (адаптивный: 1 колонка на mobile, 2 на tablet, 3 на desktop) -->
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+			<div
+				class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:[grid-template-columns:repeat(auto-fit,minmax(20rem,22rem))] lg:justify-center lg:max-w-6xl lg:mx-auto"
+			>
 				{#each data.events as event (event.id)}
 					<EventCard {event} onCardClick={() => openEventModal(event)} />
 				{/each}
@@ -167,7 +169,7 @@
 	{#if data.latestReviews && data.latestReviews.length > 0}
 		<section class="container mx-auto px-4 py-8 sm:py-12">
 			<!-- Заголовок секции -->
-			<div class="mb-8">
+			<div class="mb-8 lg:text-center lg:max-w-3xl lg:mx-auto">
 				<h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
 					{$_('homepage.reviews.title')}
 				</h2>
@@ -178,7 +180,7 @@
 
 			<!-- Список отзывов (mobile-first: вертикальный список, на desktop - горизонтальный скролл/grid) -->
 			<div
-				class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6"
+				class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 xl:[grid-template-columns:repeat(auto-fit,minmax(16rem,18rem))] xl:justify-center xl:max-w-7xl xl:mx-auto"
 			>
 				{#each data.latestReviews as review (review.id)}
 					<article

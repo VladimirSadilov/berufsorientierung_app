@@ -88,6 +88,11 @@
 	},
 	"auth": {
 		"loginTitle": "Вход",
+		"loginButton": "Войти",
+		"registerButton": "Создать аккаунт",
+		"noAccount": "Нет аккаунта?",
+		"forgotPassword": "Забыли пароль?",
+		"loggingIn": "Вход...",
 		"registerTitle": "Создать аккаунт",
 		"registerSubtitle": "Создайте аккаунт для участия в мероприятиях Berufsorientierung",
 		"alreadyHaveAccount": "Уже есть аккаунт?",
@@ -169,7 +174,8 @@
 			"open": "Регистрация открыта",
 			"full": "Мест нет",
 			"deadlinePassed": "Срок истёк",
-			"registered": "Вы записаны"
+			"registered": "Вы записаны",
+			"past": "Прошедшее"
 		},
 		"noSpotsLeft": "Мест не осталось",
 		"registrationClosed": "Регистрация закрыта",
@@ -510,6 +516,7 @@
 			"statusDraft": "Черновик",
 			"statusActive": "Активное",
 			"statusCancelled": "Отменено",
+			"statusPast": "Прошедшее",
 			"dateFrom": "Дата с",
 			"dateTo": "Дата до",
 			"resetFilters": "Сбросить фильтры",

@@ -89,12 +89,22 @@ export async function POST({ request, platform }: RequestEvent) {
 		}
 
 		// 3.2. Проверяем доступность регистрации (централизованная проверка)
-		// Проверяет: статус active, дедлайн не истёк, есть свободные места
+		// Проверяет: статус active, дедлайн не истёк, есть свободные места, не прошедшее
 		const currentCount = event.current_participants ?? 0;
 		const isOpen = dbUtils.events.isRegistrationOpen(event, currentCount);
 
 		if (!isOpen) {
 			// Определяем причину закрытия для более детального сообщения
+			// Проверка на прошедшее мероприятие
+			const now = new Date();
+			const eventEndDate = event.end_date ? new Date(event.end_date) : new Date(event.date);
+			if (eventEndDate <= now) {
+				throw createError(403, 'Event has already ended', 'EVENT_PAST', {
+					end_date: event.end_date || event.date,
+					now: now.toISOString(),
+				});
+			}
+
 			if (event.status !== 'active') {
 				throw createError(
 					403,
@@ -106,7 +116,6 @@ export async function POST({ request, platform }: RequestEvent) {
 				);
 			}
 
-			const now = new Date();
 			const deadline = new Date(event.registration_deadline);
 			if (deadline <= now) {
 				throw createError(
@@ -243,4 +252,3 @@ export async function POST({ request, platform }: RequestEvent) {
 		return handleApiError(error);
 	}
 }
-

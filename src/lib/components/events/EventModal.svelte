@@ -29,8 +29,21 @@
 	$: requirements = getTranslatedField('requirements');
 	$: location = getTranslatedField('location');
 
+	// Определение прошедшего мероприятия (end_date <= now или date <= now)
+	$: isPastEvent = (() => {
+		const now = new Date();
+		const eventEndDate = event.end_date ? new Date(event.end_date) : new Date(event.date);
+		const endMs = eventEndDate.getTime();
+		// Если дата невалидна - fail-closed (лучше показать "Прошедшее" и скрыть CTA)
+		if (Number.isNaN(endMs)) {
+			return true;
+		}
+		return eventEndDate <= now;
+	})();
+
 	// Определение можно ли записаться
-	$: canRegister = !event.isDeadlinePassed && event.spotsLeft > 0 && !event.isUserRegistered;
+	$: canRegister =
+		!isPastEvent && !event.isDeadlinePassed && event.spotsLeft > 0 && !event.isUserRegistered;
 
 	/**
 	 * Получает переведённое поле с fallback на немецкий
@@ -278,8 +291,14 @@
 				</span>
 			</div>
 
-			<!-- Статус дедлайна -->
-			{#if event.isDeadlinePassed}
+			<!-- Статус дедлайна или прошедшего мероприятия -->
+			{#if isPastEvent}
+				<div
+					class="bg-gray-100 text-gray-800 px-3 py-2 rounded-md text-sm text-center font-medium"
+				>
+					{$_('events.status.past')}
+				</div>
+			{:else if event.isDeadlinePassed}
 				<div
 					class="bg-red-100 text-red-800 px-3 py-2 rounded-md text-sm text-center font-medium"
 				>
@@ -329,7 +348,9 @@
 					</Button>
 				{:else}
 					<Button variant="secondary" type="button" fullWidth disabled>
-						{#if event.isDeadlinePassed}
+						{#if isPastEvent}
+							{$_('events.status.past')}
+						{:else if event.isDeadlinePassed}
 							{$_('events.status.deadlinePassed')}
 						{:else}
 							{$_('events.status.full')}
@@ -341,9 +362,21 @@
 				{/if}
 			{:else}
 				<!-- Пользователь не авторизован -->
-				<Button variant="primary" type="button" fullWidth on:click={handleLoginClick}>
-					{$_('events.loginToRegister')}
-				</Button>
+				{#if canRegister}
+					<Button variant="primary" type="button" fullWidth on:click={handleLoginClick}>
+						{$_('events.loginToRegister')}
+					</Button>
+				{:else}
+					<Button variant="secondary" type="button" fullWidth disabled>
+						{#if isPastEvent}
+							{$_('events.status.past')}
+						{:else if event.isDeadlinePassed}
+							{$_('events.status.deadlinePassed')}
+						{:else}
+							{$_('events.status.full')}
+						{/if}
+					</Button>
+				{/if}
 				<Button variant="secondary" type="button" fullWidth on:click={onClose}>
 					{$_('ui.modal.close')}
 				</Button>

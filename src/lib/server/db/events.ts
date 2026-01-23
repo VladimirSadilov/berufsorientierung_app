@@ -664,6 +664,7 @@ export async function closeExpiredRegistrations(db: D1Database): Promise<number>
  * Проверяет, открыта ли регистрация на мероприятие
  *
  * Регистрация считается закрытой если:
+ * - Мероприятие уже прошло (end_date <= now или date <= now)
  * - Мероприятие не в статусе 'active'
  * - Дедлайн регистрации истёк
  * - Достигнуто максимальное количество участников (если задано)
@@ -673,13 +674,25 @@ export async function closeExpiredRegistrations(db: D1Database): Promise<number>
  * @returns true если регистрация открыта, false если закрыта
  */
 export function isRegistrationOpen(event: Event, currentRegistrations?: number): boolean {
+	// Проверка 0: Мероприятие не должно быть прошедшим
+	const now = new Date();
+	// Используем end_date если есть, иначе date
+	const eventEndDate = event.end_date ? new Date(event.end_date) : new Date(event.date);
+	const endMs = eventEndDate.getTime();
+	// Если дата не парсится - fail-closed
+	if (Number.isNaN(endMs)) {
+		return false;
+	}
+	if (eventEndDate <= now) {
+		return false;
+	}
+
 	// Проверка 1: Мероприятие должно быть активным
 	if (event.status !== 'active') {
 		return false;
 	}
 
 	// Проверка 2: Дедлайн не должен быть истёкшим (или равным текущему моменту)
-	const now = new Date();
 	const deadline = new Date(event.registration_deadline);
 	if (deadline <= now) {
 		return false;

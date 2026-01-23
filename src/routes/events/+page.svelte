@@ -56,7 +56,7 @@
 	<!-- Заголовок страницы -->
 	<section class="bg-white border-b border-gray-200">
 		<div class="container mx-auto px-4 py-8 sm:py-12">
-			<div class="max-w-3xl">
+			<div class="max-w-3xl lg:mx-auto lg:text-center">
 				<h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
 					{$_('events.page.heading')}
 				</h1>
@@ -74,11 +74,13 @@
 			<!-- Будущие мероприятия -->
 			{#if data.upcomingEvents.length > 0}
 				<div class="mb-12">
-					<h2 class="text-2xl font-bold text-gray-900 mb-6">
+					<h2 class="text-2xl font-bold text-gray-900 mb-6 lg:text-center">
 						{$_('events.upcomingEvents')}
 					</h2>
 					<!-- Grid мероприятий (адаптивный: 1 колонка на mobile, 2 на tablet, 3 на desktop) -->
-					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<div
+						class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:[grid-template-columns:repeat(auto-fit,minmax(20rem,22rem))] lg:justify-center lg:max-w-6xl lg:mx-auto"
+					>
 						{#each data.upcomingEvents as event (event.id)}
 							<EventCard {event} onCardClick={() => openEventModal(event)} />
 						{/each}
@@ -89,11 +91,13 @@
 			<!-- Прошедшие мероприятия -->
 			{#if data.pastEvents.length > 0}
 				<div>
-					<h2 class="text-2xl font-bold text-gray-900 mb-6">
+					<h2 class="text-2xl font-bold text-gray-900 mb-6 lg:text-center">
 						{$_('events.pastEvents')}
 					</h2>
 					<!-- Grid мероприятий (адаптивный: 1 колонка на mobile, 2 на tablet, 3 на desktop) -->
-					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<div
+						class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:[grid-template-columns:repeat(auto-fit,minmax(20rem,22rem))] lg:justify-center lg:max-w-6xl lg:mx-auto"
+					>
 						{#each data.pastEvents as event (event.id)}
 							<EventCard {event} onCardClick={() => openEventModal(event)} />
 						{/each}

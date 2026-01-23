@@ -193,6 +193,7 @@ describe('Events Database Utilities', () => {
 			const mockEvent = {
 				id: 1,
 				status: 'active',
+				date: new Date(Date.now() + 86400000 * 2).toISOString(), // послезавтра
 				registration_deadline: new Date(Date.now() + 86400000).toISOString(), // завтра
 				max_participants: 30,
 				current_participants: 10,
@@ -206,6 +207,7 @@ describe('Events Database Utilities', () => {
 			const mockEvent = {
 				id: 1,
 				status: 'active',
+				date: new Date(Date.now() + 86400000 * 2).toISOString(), // послезавтра
 				registration_deadline: new Date(Date.now() - 86400000).toISOString(), // вчера
 				max_participants: 30,
 				current_participants: 10,
@@ -219,6 +221,7 @@ describe('Events Database Utilities', () => {
 			const mockEvent = {
 				id: 1,
 				status: 'active',
+				date: new Date(Date.now() + 86400000 * 2).toISOString(), // послезавтра
 				registration_deadline: new Date(Date.now() + 86400000).toISOString(), // завтра
 				max_participants: 30,
 				current_participants: 30, // полностью заполнено
@@ -232,6 +235,7 @@ describe('Events Database Utilities', () => {
 			const mockEvent = {
 				id: 1,
 				status: 'cancelled',
+				date: new Date(Date.now() + 86400000 * 2).toISOString(), // послезавтра
 				registration_deadline: new Date(Date.now() + 86400000).toISOString(), // завтра
 				max_participants: 30,
 				current_participants: 10,
@@ -245,6 +249,7 @@ describe('Events Database Utilities', () => {
 			const mockEvent = {
 				id: 1,
 				status: 'active',
+				date: new Date(Date.now() + 86400000 * 2).toISOString(), // послезавтра
 				registration_deadline: new Date(Date.now() + 86400000).toISOString(), // завтра
 				max_participants: null, // без лимита
 				current_participants: 100,
@@ -259,6 +264,7 @@ describe('Events Database Utilities', () => {
 			const mockEvent = {
 				id: 1,
 				status: 'active',
+				date: new Date(Date.now() + 86400000 * 2).toISOString(), // послезавтра
 				registration_deadline: now.toISOString(), // точно сейчас
 				max_participants: 30,
 				current_participants: 10,

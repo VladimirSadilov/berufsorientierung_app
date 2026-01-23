@@ -88,6 +88,11 @@
 	},
 	"auth": {
 		"loginTitle": "Login",
+		"loginButton": "Login",
+		"registerButton": "Create account",
+		"noAccount": "Don't have an account?",
+		"forgotPassword": "Forgot password?",
+		"loggingIn": "Logging in...",
 		"registerTitle": "Create account",
 		"registerSubtitle": "Create an account to participate in Berufsorientierung events",
 		"alreadyHaveAccount": "Already have an account?",
@@ -169,7 +174,8 @@
 			"open": "Registration open",
 			"full": "Full",
 			"deadlinePassed": "Deadline passed",
-			"registered": "You are registered"
+			"registered": "You are registered",
+			"past": "Past"
 		},
 		"noSpotsLeft": "No spots available",
 		"registrationClosed": "Registration closed",
@@ -510,6 +516,7 @@
 			"statusDraft": "Draft",
 			"statusActive": "Active",
 			"statusCancelled": "Cancelled",
+			"statusPast": "Past",
 			"dateFrom": "Date From",
 			"dateTo": "Date To",
 			"resetFilters": "Reset Filters",
