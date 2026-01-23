@@ -3,6 +3,44 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { requireAdmin } from '$lib/server/middleware/admin';
 import { getDB } from '$lib/server/db';
 
+/**
+ * Calculate age in full years at a given reference date.
+ * Both dates should be in YYYY-MM-DD format.
+ * Returns null if either date is invalid or missing.
+ */
+function calculateAgeAtDate(
+	birthDateStr: string | null | undefined,
+	refDateStr: string | null | undefined
+): number | null {
+	if (!birthDateStr || !refDateStr) return null;
+
+	// Parse YYYY-MM-DD (take only first 10 chars in case of datetime)
+	const birthPart = birthDateStr.slice(0, 10);
+	const refPart = refDateStr.slice(0, 10);
+
+	const birthMatch = birthPart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	const refMatch = refPart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+	if (!birthMatch || !refMatch) return null;
+
+	const birthYear = parseInt(birthMatch[1], 10);
+	const birthMonth = parseInt(birthMatch[2], 10);
+	const birthDay = parseInt(birthMatch[3], 10);
+
+	const refYear = parseInt(refMatch[1], 10);
+	const refMonth = parseInt(refMatch[2], 10);
+	const refDay = parseInt(refMatch[3], 10);
+
+	let age = refYear - birthYear;
+
+	// Check if birthday has not occurred yet in the reference year
+	if (refMonth < birthMonth || (refMonth === birthMonth && refDay < birthDay)) {
+		age--;
+	}
+
+	return age >= 0 ? age : null;
+}
+
 export const GET: RequestHandler = async ({ url, platform, locals }) => {
 	// Проверка прав администратора
 	const adminCheck = await requireAdmin(platform, locals);
@@ -70,6 +108,11 @@ export const GET: RequestHandler = async ({ url, platform, locals }) => {
 			u.last_name,
 			u.email,
 			u.phone,
+			u.address_street,
+			u.address_number,
+			u.address_zip,
+			u.address_city,
+			u.birth_date,
 			e.title_de,
 			e.date as event_date,
 			r.registered_at,
@@ -96,6 +139,11 @@ export const GET: RequestHandler = async ({ url, platform, locals }) => {
 		'Last Name',
 		'Email',
 		'Phone',
+		'Address Street',
+		'Address Number',
+		'Address ZIP',
+		'Address City',
+		'Age',
 		'Event',
 		'Event Date',
 		'Registered At',
@@ -112,12 +160,19 @@ export const GET: RequestHandler = async ({ url, platform, locals }) => {
 			? statusTranslations.cancelled[language]
 			: statusTranslations.active[language];
 
+		const age = calculateAgeAtDate(reg.birth_date, reg.event_date);
+
 		const row = [
 			reg.id,
 			escapeCsvValue(reg.first_name),
 			escapeCsvValue(reg.last_name),
 			escapeCsvValue(reg.email),
 			escapeCsvValue(reg.phone || ''),
+			escapeCsvValue(reg.address_street || ''),
+			escapeCsvValue(reg.address_number || ''),
+			escapeCsvValue(reg.address_zip || ''),
+			escapeCsvValue(reg.address_city || ''),
+			age !== null ? age : '',
 			escapeCsvValue(reg.title_de),
 			reg.event_date,
 			reg.registered_at,
