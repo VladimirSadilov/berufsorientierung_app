@@ -6,6 +6,8 @@
 	export let type: 'text' | 'email' | 'password' | 'date' | 'tel' | 'textarea' = 'text';
 	export let placeholder = '';
 	export let error = '';
+	export let warning = '';
+	export let success = false;
 	export let required = false;
 	export let value = '';
 	export let name: string | undefined = undefined;
@@ -18,6 +20,7 @@
 	// Если id не передан, генерируем на основе name (или случайный для кастомных полей)
 	const fieldId = id || (name ? `field-${name}` : `field-${Math.random().toString(36).slice(2)}`);
 	const errorId = `${fieldId}-error`;
+	const warningId = `${fieldId}-warning`;
 	const helpId = `${fieldId}-help`;
 
 	// Базовые стили для input/textarea
@@ -27,7 +30,11 @@
 	// Стили в зависимости от наличия ошибки
 	$: inputClasses = error
 		? `${baseInputClasses} border-red-500 focus:ring-red-500 focus:border-red-500`
-		: `${baseInputClasses} border-gray-300 focus:ring-blue-500 focus:border-blue-500`;
+		: warning
+			? `${baseInputClasses} border-yellow-500 focus:ring-yellow-500 focus:border-yellow-500`
+			: success
+				? `${baseInputClasses} border-green-500 focus:ring-green-500 focus:border-green-500`
+				: `${baseInputClasses} border-gray-300 focus:ring-blue-500 focus:border-blue-500`;
 
 	// Обработка изменения значения
 	function handleInput(event: Event) {
@@ -59,10 +66,13 @@
 			class={inputClasses}
 			rows="4"
 			aria-invalid={!!error}
-			aria-describedby={[error ? errorId : '', help ? helpId : '']
+			aria-describedby={[error ? errorId : '', !error && warning ? warningId : '', help ? helpId : '']
 				.filter(Boolean)
 				.join(' ') || undefined}
 			on:input={handleInput}
+			on:blur
+			on:focus
+			on:change
 			{...$$restProps}
 		></textarea>
 	{:else}
@@ -77,10 +87,13 @@
 			{autocomplete}
 			class={inputClasses}
 			aria-invalid={!!error}
-			aria-describedby={[error ? errorId : '', help ? helpId : '']
+			aria-describedby={[error ? errorId : '', !error && warning ? warningId : '', help ? helpId : '']
 				.filter(Boolean)
 				.join(' ') || undefined}
 			on:input={handleInput}
+			on:blur
+			on:focus
+			on:change
 			{...$$restProps}
 		/>
 	{/if}
@@ -96,6 +109,10 @@
 	{#if error}
 		<p id={errorId} class="mt-2 text-sm text-red-600" role="alert">
 			{error}
+		</p>
+	{:else if warning}
+		<p id={warningId} class="mt-2 text-sm text-yellow-700">
+			{warning}
 		</p>
 	{/if}
 </div>

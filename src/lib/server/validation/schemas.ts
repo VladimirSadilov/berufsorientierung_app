@@ -73,15 +73,6 @@ function isValidGermanZip(zip: string): boolean {
 }
 
 /**
- * Проверяет, содержит ли пароль буквы и цифры
- */
-function hasLettersAndNumbers(password: string): boolean {
-	const hasLetter = /[a-zA-Z]/.test(password);
-	const hasNumber = /\d/.test(password);
-	return hasLetter && hasNumber;
-}
-
-/**
  * Проверяет, содержит ли строка только буквы (с учетом умлаутов и кириллицы)
  */
 function isOnlyLetters(str: string): boolean {
@@ -114,10 +105,7 @@ const emailSchema = z
  */
 const passwordSchema = z
 	.string()
-	.min(8, { message: 'Password must be at least 8 characters long' })
-	.refine(hasLettersAndNumbers, {
-		message: 'Password must contain both letters and numbers',
-	});
+	.min(8, { message: 'Password must be at least 8 characters long' });
 
 /**
  * Схема для имени/фамилии

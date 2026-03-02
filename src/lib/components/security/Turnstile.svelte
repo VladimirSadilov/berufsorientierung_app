@@ -115,6 +115,16 @@
 			size,
 			appearance,
 		};
+		options['expired-callback'] = () => {
+			if (widgetId !== undefined && window.turnstile) {
+				window.turnstile.reset(widgetId);
+			}
+		};
+		options['error-callback'] = () => {
+			if (widgetId !== undefined && window.turnstile) {
+				window.turnstile.reset(widgetId);
+			}
+		};
 
 		// Добавляем action если указан
 		if (action) {

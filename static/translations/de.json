@@ -51,13 +51,15 @@
 		"required": "Pflichtfeld",
 		"optional": "Optional",
 		"select": "Auswählen",
-		"uploadFile": "Datei hochladen"
+		"uploadFile": "Datei hochladen",
+		"phoneHint": "Mit Ländervorwahl eingeben (+...). Leerzeichen und Bindestriche sind erlaubt. Beispiel: +49 151 23456789, +351 912 345 678, +7 999 123-45-67"
 	},
 	"validation": {
 		"emailRequired": "E-Mail ist erforderlich",
 		"emailInvalid": "Ungültige E-Mail-Adresse",
 		"passwordRequired": "Passwort ist erforderlich",
 		"passwordMinLength": "Passwort muss mindestens 8 Zeichen lang sein",
+		"passwordWeak": "Dieses Passwort ist sehr einfach. Wir empfehlen ein sichereres Passwort.",
 		"passwordComplexity": "Passwort muss Buchstaben und Zahlen enthalten",
 		"passwordConfirmRequired": "Passwort-Bestätigung ist erforderlich",
 		"passwordMismatch": "Passwörter stimmen nicht überein",

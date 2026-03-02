@@ -78,6 +78,14 @@
 	let errorMessage = '';
 	let showPassword = false;
 	let showPasswordConfirm = false;
+	let passwordWeakWarning = '';
+	let touchedFields: Partial<Record<keyof UserRegistrationData, boolean>> = {};
+
+	const WEAK_PATTERNS = [
+		/^\d+$/,
+		/^[a-z]+$/i,
+		/^(qwerty|password|12345678|87654321|abcdefgh|aaaaaaaa)/i,
+	];
 
 	// Ссылка на Turnstile компонент для сброса
 	let turnstileComponent: any;
@@ -95,27 +103,82 @@
 	// Вычисляемое свойство: нужно ли согласие родителей
 	$: needsParentalConsent = userAge >= 0 && userAge < 18;
 
-	/**
-	 * Валидация поля на клиенте
-	 */
-	function validateField(fieldName: keyof UserRegistrationData) {
+	$: passwordSuccess =
+		!!touchedFields.password &&
+		!errors.password &&
+		!passwordWeakWarning &&
+		formData.password.length >= 8;
+
+	$: passwordConfirmSuccess =
+		!!touchedFields.password_confirm &&
+		!errors.password_confirm &&
+		formData.password_confirm.length > 0 &&
+		formData.password_confirm === formData.password;
+
+	$: phoneSuccess = !!touchedFields.phone && !errors.phone && formData.phone.trim().length > 0;
+	$: whatsappSuccess =
+		!!touchedFields.whatsapp &&
+		!errors.whatsapp &&
+		(formData.whatsapp ?? '').trim().length > 0;
+
+	function isWeakPassword(password: string): boolean {
+		if (password.length < 8) return false;
+		return WEAK_PATTERNS.some((pattern) => pattern.test(password));
+	}
+
+	function updatePasswordWeakWarning() {
+		passwordWeakWarning = '';
+
+		if (!touchedFields.password || errors.password) {
+			return;
+		}
+
+		if (isWeakPassword(formData.password)) {
+			passwordWeakWarning = $_('validation.passwordWeak', {
+				default: 'Этот пароль очень простой. Рекомендуем использовать более надёжный.',
+			});
+		}
+	}
+
+	function applyFieldValidation(fieldName: keyof UserRegistrationData) {
 		try {
-			// Валидируем всю форму, но показываем ошибку только для конкретного поля
 			userRegistrationSchema.parse(formData);
-			// Если валидация прошла, удаляем ошибку для этого поля
 			delete errors[fieldName];
-			errors = errors;
 		} catch (err: any) {
-			// Извлекаем ошибки для конкретного поля
-			const fieldErrors = err.issues.filter((issue: any) => issue.path[0] === fieldName);
+			const issues = err?.issues ?? err?.errors ?? [];
+			const fieldErrors = issues.filter((issue: any) => issue.path[0] === fieldName);
+
 			if (fieldErrors.length > 0) {
-				// Маппим i18n ключ через $_ с fallback на сам ключ
 				const errorKey = fieldErrors[0].message;
 				errors[fieldName] = $_(errorKey, { default: errorKey });
 			} else {
 				delete errors[fieldName];
 			}
-			errors = errors;
+		}
+
+		errors = { ...errors };
+	}
+
+	/**
+	 * Валидация поля на клиенте
+	 */
+	function validateField(fieldName: keyof UserRegistrationData) {
+		touchedFields = { ...touchedFields, [fieldName]: true };
+		applyFieldValidation(fieldName);
+
+		if (fieldName === 'password') {
+			updatePasswordWeakWarning();
+
+			if (touchedFields.password_confirm) {
+				applyFieldValidation('password_confirm');
+			}
+		} else if (fieldName === 'password_confirm') {
+			// Когда оба поля пароля заполнены и пользователь уходит дальше,
+			// держим состояние пары полей синхронизированным.
+			if (touchedFields.password) {
+				applyFieldValidation('password');
+				updatePasswordWeakWarning();
+			}
 		}
 	}
 
@@ -175,9 +238,10 @@
 				}
 
 				// Обработка ошибок с сервера
-				if (result.errors && Array.isArray(result.errors)) {
+				const serverErrors = result.errors ?? result.details?.errors;
+				if (serverErrors && Array.isArray(serverErrors)) {
 					// Ошибки валидации
-					result.errors.forEach((err: any) => {
+					serverErrors.forEach((err: any) => {
 						if (err.field && err.message) {
 							// Если сообщение - строка (i18n ключ), переводим его
 							if (typeof err.message === 'string') {
@@ -190,11 +254,11 @@
 							}
 						}
 					});
-					errors = errors;
+					errors = { ...errors };
 				} else if (result.error) {
 					errorMessage = result.error;
 				} else {
-					errorMessage = 'Регистрация не удалась. Попробуйте снова.';
+					errorMessage = $_('auth.registerError', { default: 'Registration failed' });
 				}
 				return;
 			}
@@ -222,16 +286,17 @@
 				turnstileComponent.reset();
 			}
 
-			if (err.errors) {
+			const zodIssues = err?.issues ?? err?.errors;
+			if (zodIssues && Array.isArray(zodIssues)) {
 				// Ошибки валидации Zod
-				err.errors.forEach((error: any) => {
+				zodIssues.forEach((error: any) => {
 					if (error.path && error.path.length > 0) {
 						// Маппим i18n ключ через $_ с fallback на сам ключ
 						const errorKey = error.message;
 						errors[error.path[0]] = $_(errorKey, { default: errorKey });
 					}
 				});
-				errors = errors;
+				errors = { ...errors };
 			} else {
 				errorMessage = err.message || 'Произошла ошибка при регистрации';
 			}
@@ -370,6 +435,8 @@
 								name="password"
 								bind:value={formData.password}
 								error={errors.password}
+								warning={passwordWeakWarning}
+								success={passwordSuccess}
 								required
 								autocomplete="new-password"
 								on:blur={() => validateField('password')}
@@ -428,6 +495,7 @@
 								name="password_confirm"
 								bind:value={formData.password_confirm}
 								error={errors.password_confirm}
+								success={passwordConfirmSuccess}
 								required
 								autocomplete="new-password"
 								on:blur={() => validateField('password_confirm')}
@@ -704,6 +772,8 @@
 							name="phone"
 							bind:value={formData.phone}
 							error={errors.phone}
+							success={phoneSuccess}
+							help={$_('form.phoneHint')}
 							required
 							autocomplete="tel"
 							on:blur={() => validateField('phone')}
@@ -716,6 +786,8 @@
 							name="whatsapp"
 							bind:value={formData.whatsapp}
 							error={errors.whatsapp}
+							success={whatsappSuccess}
+							help={$_('form.phoneHint')}
 							autocomplete="tel"
 							on:blur={() => validateField('whatsapp')}
 							placeholder="+49 123 456789"

@@ -114,10 +114,10 @@ describe('User Validation Schemas', () => {
 			expect(result.success).toBe(false);
 		});
 
-		it('should reject password without numbers', () => {
-			const noNumbersPassword = {
+		it('should accept password without numbers', () => {
+			const lettersOnlyPassword = {
 				email: 'test@example.com',
-				password: 'OnlyLetters', // No numbers
+				password: 'OnlyLetters',
 				password_confirm: 'OnlyLetters',
 				first_name: 'John',
 				last_name: 'Doe',
@@ -133,8 +133,8 @@ describe('User Validation Schemas', () => {
 				preferred_language: 'de' as const,
 			};
 
-			const result = userRegistrationSchema.safeParse(noNumbersPassword);
-			expect(result.success).toBe(false);
+			const result = userRegistrationSchema.safeParse(lettersOnlyPassword);
+			expect(result.success).toBe(true);
 		});
 
 		it('should reject invalid email', () => {

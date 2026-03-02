@@ -55,6 +55,7 @@
 	let isSubmitting = false;
 	let errorMessage = '';
 	let showPassword = false;
+	let turnstileComponent: any;
 
 	/**
 	 * Валидация поля на клиенте
@@ -130,6 +131,10 @@
 			const result = await response.json();
 
 			if (!response.ok) {
+				if (turnstileComponent?.reset) {
+					turnstileComponent.reset();
+				}
+
 				// Обработка ошибок с сервера
 				if (result.errors && Array.isArray(result.errors)) {
 					// Ошибки валидации
@@ -166,6 +171,10 @@
 			// Редирект на целевую страницу или главную
 			await goto(safeRedirectTo ?? '/');
 		} catch (err: any) {
+			if (turnstileComponent?.reset) {
+				turnstileComponent.reset();
+			}
+
 			if (err.errors) {
 				// Ошибки валидации Zod
 				err.errors.forEach((error: any) => {
@@ -368,7 +377,7 @@
 
 				<!-- Cloudflare Turnstile (защита от ботов) -->
 				{#if data.turnstileSiteKey}
-					<Turnstile siteKey={data.turnstileSiteKey} action="login" />
+					<Turnstile bind:this={turnstileComponent} siteKey={data.turnstileSiteKey} action="login" />
 				{/if}
 
 				<!-- Кнопка входа -->
