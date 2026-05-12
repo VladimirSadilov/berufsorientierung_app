@@ -39,6 +39,7 @@ declare global {
 				R2_BUCKET: R2Bucket;
 				JWT_SECRET: string;
 				EMAIL_PROVIDER: string;
+				EMAIL_NOOP_LOG_BODY?: string;
 				EMAIL_FROM: string;
 				EMAIL_REPLY_TO: string;
 				EMAIL_BULK_CHUNK: string;

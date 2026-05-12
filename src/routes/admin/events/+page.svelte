@@ -12,10 +12,13 @@
 
 	export let data;
 
+	type StatusFilter = EventStatus | 'past' | 'all';
+
 	// Состояние фильтров
-	let statusFilter: EventStatus | 'all' = 'all';
+	let statusFilter: StatusFilter = 'all';
 	let dateFromFilter = '';
 	let dateToFilter = '';
+	let previousFilterKey = `${statusFilter}|${dateFromFilter}|${dateToFilter}`;
 
 	// Пагинация
 	const itemsPerPage = 20;
@@ -42,8 +45,15 @@
 
 	// Фильтрация мероприятий
 	$: filteredEvents = data.events.filter((event: EventWithStats) => {
+		const isPast = isPastEvent(event);
 		// Фильтр по статусу
-		if (statusFilter !== 'all' && event.status !== statusFilter) return false;
+		if (statusFilter === 'past') {
+			if (!(event.status === 'active' && isPast)) return false;
+		} else if (statusFilter === 'active') {
+			if (event.status !== 'active' || isPast) return false;
+		} else if (statusFilter !== 'all' && event.status !== statusFilter) {
+			return false;
+		}
 
 		// Фильтр по дате от (сравнение Date)
 		if (dateFromFilter) {
@@ -70,8 +80,16 @@
 	);
 
 	// Сброс на первую страницу при изменении фильтров
-	$: if (statusFilter || dateFromFilter || dateToFilter) {
-		currentPage = 1;
+	$: {
+		const filterKey = `${statusFilter}|${dateFromFilter}|${dateToFilter}`;
+		if (filterKey !== previousFilterKey) {
+			currentPage = 1;
+			previousFilterKey = filterKey;
+		}
+	}
+
+	$: if (currentPage > Math.max(totalPages, 1)) {
+		currentPage = Math.max(totalPages, 1);
 	}
 
 	/**
@@ -436,6 +454,7 @@
 					<option value="all">{$_('admin.events.allStatuses')}</option>
 					<option value="draft">{$_('admin.events.statusDraft')}</option>
 					<option value="active">{$_('admin.events.statusActive')}</option>
+					<option value="past">{$_('admin.events.statusPast')}</option>
 					<option value="cancelled">{$_('admin.events.statusCancelled')}</option>
 				</select>
 			</div>
@@ -678,7 +697,7 @@
 							{/if}
 
 							<!-- Отменить (только для active) -->
-							{#if event.status === 'active'}
+							{#if event.status === 'active' && !isPastEvent(event)}
 								<button
 									on:click={() => openCancelModal(event)}
 									class="text-orange-600 hover:text-orange-900"
@@ -838,7 +857,7 @@
 						{$_('admin.events.publish')}
 					</Button>
 				{/if}
-				{#if event.status === 'active'}
+				{#if event.status === 'active' && !isPastEvent(event)}
 					<Button on:click={() => openCancelModal(event)} variant="danger" size="sm">
 						{$_('admin.events.cancel')}
 					</Button>

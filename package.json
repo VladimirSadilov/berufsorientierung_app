@@ -17,6 +17,9 @@
 		"test:watch": "vitest",
 		"test:ui": "vitest --ui",
 		"test:coverage": "vitest run --coverage",
+		"db:local:migrate": "wrangler d1 migrations apply berufsorientierung-db --local",
+		"db:local:seed": "wrangler d1 execute berufsorientierung-db --local --file=./scripts/local-seed.sql",
+		"local:setup": "npm run db:local:migrate && npm run db:local:seed",
 		"deploy": "npm run build && wrangler deploy"
 	},
 	"devDependencies": {

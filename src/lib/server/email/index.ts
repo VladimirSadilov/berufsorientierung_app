@@ -263,6 +263,26 @@ async function sendEmailViaResend(
 }
 
 /**
+ * Local development email provider.
+ * It deliberately avoids external API calls and writes the message to the server log.
+ */
+async function sendEmailViaNoop(
+	to: string,
+	subject: string,
+	text: string,
+	env: App.Platform['env']
+): Promise<void> {
+	console.log('[Email][Noop] Email skipped:', {
+		to,
+		subject,
+	});
+
+	if (env.EMAIL_NOOP_LOG_BODY === 'true') {
+		console.log(`[Email][Noop] Body:\n${text}`);
+	}
+}
+
+/**
  * Отправка одиночного email
  *
  * Универсальная функция отправки, которая автоматически выбирает провайдера
@@ -311,6 +331,10 @@ export async function sendEmail(
 
 	if (provider === 'resend') {
 		return sendEmailViaResend(to, subject, text, env);
+	}
+
+	if (provider === 'noop') {
+		return sendEmailViaNoop(to, subject, text, env);
 	}
 
 	// Неподдерживаемый провайдер

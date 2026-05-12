@@ -45,7 +45,12 @@ export async function load({ platform }: any): Promise<DashboardData> {
 
 			// 2. Активные мероприятия
 			db
-				.prepare("SELECT COUNT(*) as count FROM events WHERE status = 'active'")
+				.prepare(
+					`SELECT COUNT(*) as count
+					 FROM events
+					 WHERE status = 'active'
+					 AND datetime(replace(COALESCE(end_date, date), 'T', ' ')) > datetime('now')`
+				)
 				.first<{ count: number }>(),
 
 			// 3. Предстоящие регистрации (мероприятия в будущем, регистрации не отменены)

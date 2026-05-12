@@ -5,6 +5,7 @@ node_modules
 .vercel
 .netlify
 .wrangler
+.dev-server*.log
 /.svelte-kit
 /build
 /dist
@@ -18,6 +19,8 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+.dev.vars
+.dev.vars.*
 
 # Vite
 vite.config.js.timestamp-*

@@ -391,8 +391,6 @@ export async function getAllEvents(
  */
 export async function getActiveEvents(db: D1Database): Promise<Event[]> {
 	try {
-		const now = new Date().toISOString();
-
 		const result = await db
 			.prepare(
 				`SELECT 
@@ -400,11 +398,11 @@ export async function getActiveEvents(db: D1Database): Promise<Event[]> {
 					COUNT(DISTINCT CASE WHEN r.cancelled_at IS NULL THEN r.id END) as current_participants
 				FROM events e
 				LEFT JOIN registrations r ON e.id = r.event_id
-				WHERE e.status = 'active' AND e.date >= ?
+				WHERE e.status = 'active'
+				  AND datetime(replace(COALESCE(e.end_date, e.date), 'T', ' ')) > datetime('now')
 				GROUP BY e.id
 				ORDER BY e.date ASC`
 			)
-			.bind(now)
 			.all<Event & { current_participants: number }>();
 
 		return result.results || [];
