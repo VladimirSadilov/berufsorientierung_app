@@ -4,10 +4,15 @@
 
 ## 🚀 Быстрый старт
 
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - 🏗️ Короткая карта архитектуры, маршрутов, модулей и точек входа в код
 - **[DEPLOYMENT.md](./development/DEPLOYMENT.md)** - 📦 Полное руководство по развертыванию на Cloudflare Workers
 - **[Email Setup](./features/email/DEPLOYMENT.md)** - 📧 Настройка DNS (SPF/DKIM/DMARC)
 
-## �📂 Структура документации
+## 📂 Структура документации
+
+### 🏗️ Архитектура
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - главный entry point для быстрого поиска контекста в коде. Начинайте с него, если нужно понять, где находится нужная логика.
 
 ### 🔧 Разработка ([development/](./development/))
 
@@ -51,6 +56,10 @@
 
 - [README.md](./database/users/README.md) - Описание модуля пользователей
 - [CHANGELOG.md](./database/users/CHANGELOG.md) - История изменений
+
+#### Отзывы ([database/reviews/](./database/reviews/))
+
+- [README.md](./database/reviews/README.md) - Описание модуля отзывов и публичных review-ссылок
 
 ---
 
@@ -105,6 +114,7 @@
 
 ### Для разработчиков
 
+- **Архитектура и карта кода**: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - **Начать работу**: [PROGRESS.md](./development/PROGRESS.md)
 - **Типы данных**: [TYPE_SYSTEM.md](./development/TYPE_SYSTEM.md)
 - **Последние исправления**: [development/fixes/](./development/fixes/)
@@ -113,6 +123,7 @@
 
 - **Логирование**: [database/activitylog/](./database/activitylog/)
 - **События**: [database/events/](./database/events/)
+- **Отзывы**: [database/reviews/](./database/reviews/)
 - **Пользователи**: [database/users/](./database/users/)
 
 ### Для функционала
@@ -146,4 +157,4 @@
 
 ---
 
-**Последнее обновление**: 2025-11-20
+**Последнее обновление**: 2026-05-13

@@ -41,6 +41,12 @@
 - [README.md](./users/README.md) - Полное описание API
 - [CHANGELOG.md](./users/CHANGELOG.md) - История изменений
 
+### [reviews/](./reviews/) - Отзывы
+
+Модуль управления отзывами и публичными ссылками для сбора отзывов.
+
+- [README.md](./reviews/README.md) - Описание API и связанных маршрутов
+
 ### [gdpr/](./gdpr/) - GDPR Compliance
 
 Модуль для управления удалением пользователей в соответствии с GDPR.

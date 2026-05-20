@@ -81,7 +81,7 @@
 - Плавные анимации и transitions
 - Консистентный дизайн (Tailwind CSS)
 
--### [email/](./email/) - Email система
+### [email/](./email/) - Email система
 
 Email sending via `Resend` (recommended) or `MailChannels` (Cloudflare-only).
 
@@ -97,6 +97,28 @@ Email sending via `Resend` (recommended) or `MailChannels` (Cloudflare-only).
 - DKIM подпись для повышения deliverability
 - Детальное логирование успехов/ошибок
 - Workers-friendly архитектура (явная передача env)
+
+### Reviews - Отзывы
+
+Публичные и пользовательские отзывы о мероприятиях.
+
+**Код:**
+
+- `src/lib/server/db/reviews.ts` - D1-модуль отзывов и публичных ссылок
+- `src/routes/reviews/` - публичная лента отзывов
+- `src/routes/reviews/public/[token]/` - публичная форма отзыва по токену
+- `src/routes/events/[id]/review/` - отзыв авторизованного участника
+- `src/routes/admin/reviews/` - модерация отзывов
+
+**Документация:** [database/reviews/README.md](../database/reviews/README.md)
+
+**Функционал:**
+
+- Публичные ссылки для сбора отзывов
+- Проверка окна доступности отзыва после мероприятия
+- Модерация approve/reject
+- Публичная выдача только approved-отзывов
+- Последние отзывы на главной странице
 
 ### [admin/](./admin/) - Админ-панель
 

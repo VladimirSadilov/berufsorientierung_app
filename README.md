@@ -5,10 +5,11 @@
 ## 📚 Документация
 
 - **[🚀 DEPLOYMENT.md](./docs/development/DEPLOYMENT.md)** - Полное руководство по развертыванию на Cloudflare Workers
+- **[🏗️ ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Короткая карта архитектуры и навигация по коду
 - **[📧 Email Setup](./docs/features/email/DEPLOYMENT.md)** - Настройка DNS (SPF/DKIM/DMARC)
 - **[📖 Documentation Index](./docs/README.md)** - Вся документация проекта
 
-## �🚀 Технологический стек
+## 🚀 Технологический стек
 
 **Frontend:**
 
@@ -20,7 +21,7 @@
 
 - Cloudflare Workers (serverless)
 - Cloudflare D1 (SQLite база данных)
-- Cloudflare R2 (хранилище QR-кодов)
+- Cloudflare R2 (QR-коды, постеры мероприятий и другие файлы)
 
 **Библиотеки:**
 
@@ -100,17 +101,25 @@ wrangler d1 execute berufsorientierung-db --local --file=./migrations/0001_initi
 wrangler d1 execute berufsorientierung-db --local --file=./migrations/0002_make_max_participants_nullable.sql
 wrangler d1 execute berufsorientierung-db --local --file=./migrations/0003_add_guardian_fields.sql
 wrangler d1 execute berufsorientierung-db --local --file=./migrations/0004_add_password_reset_fields.sql
+wrangler d1 execute berufsorientierung-db --local --file=./migrations/0005_add_event_end_date.sql
+wrangler d1 execute berufsorientierung-db --local --file=./migrations/0006_add_reviews.sql
+wrangler d1 execute berufsorientierung-db --local --file=./migrations/0007_add_event_poster_url.sql
+wrangler d1 execute berufsorientierung-db --local --file=./migrations/0008_add_events_is_listed.sql
 
 # Применить миграции в продакшн
 wrangler d1 execute berufsorientierung-db --file=./migrations/0001_initial.sql
 wrangler d1 execute berufsorientierung-db --file=./migrations/0002_make_max_participants_nullable.sql
 wrangler d1 execute berufsorientierung-db --file=./migrations/0003_add_guardian_fields.sql
 wrangler d1 execute berufsorientierung-db --file=./migrations/0004_add_password_reset_fields.sql
+wrangler d1 execute berufsorientierung-db --file=./migrations/0005_add_event_end_date.sql
+wrangler d1 execute berufsorientierung-db --file=./migrations/0006_add_reviews.sql
+wrangler d1 execute berufsorientierung-db --file=./migrations/0007_add_event_poster_url.sql
+wrangler d1 execute berufsorientierung-db --file=./migrations/0008_add_events_is_listed.sql
 ```
 
 ## 📦 R2 Storage
 
-### Создание R2 bucket для QR-кодов
+### Создание R2 bucket для файлов
 
 ```bash
 # Создать bucket
@@ -379,13 +388,15 @@ v=DMARC1; p=quarantine; rua=mailto:dmarc@kolibri-dresden.de
 
 ## 📁 Структура проекта
 
+Для точной навигации по коду и связям модулей см. [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
+
 ```
 berufsorientierung-app/
 ├── src/
-│   ├── routes/              # SvelteKit роуты
+│   ├── routes/              # SvelteKit страницы, layouts и API endpoints
 │   ├── lib/
-│   │   ├── components/      # Svelte компоненты
-│   │   ├── server/          # Серверный код (БД, email, auth)
+│   │   ├── components/      # UI, layout, events и admin компоненты
+│   │   ├── server/          # Серверный код (auth, БД, email, middleware, storage)
 │   │   ├── types/           # TypeScript типы
 │   │   ├── stores/          # Svelte stores
 │   │   ├── validation/      # Zod схемы валидации
@@ -393,10 +404,12 @@ berufsorientierung-app/
 │   │   └── assets/          # Статические ассеты
 │   ├── app.d.ts             # TypeScript декларации
 │   ├── hooks.server.ts      # SvelteKit server hooks
-│   └── worker.ts            # Cloudflare Worker entry point
+│   └── worker.ts            # Cloudflare scheduled handler для Cron
 ├── static/
 │   ├── translations/        # i18n переводы (de/en/ru/uk)
-│   └── image/               # Изображения
+│   ├── flags/               # Флаги языков
+│   ├── image/               # Публичные изображения
+│   └── img/                 # Публичные изображения, используемые layout/footer
 ├── migrations/              # SQL миграции (D1 database)
 ├── tests/                   # Vitest тесты (unit + integration)
 ├── docs/                    # 📚 Документация проекта
@@ -420,6 +433,7 @@ berufsorientierung-app/
 Полная документация проекта находится в папке [`docs/`](./docs/):
 
 - **[docs/README.md](./docs/README.md)** - Главная страница документации
+- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Карта архитектуры и быстрый поиск нужного кода
 - **[docs/development/](./docs/development/)** - Документация для разработчиков
 - **[docs/database/](./docs/database/)** - Описание модулей БД
 - **[docs/features/](./docs/features/)** - Функциональные возможности
