@@ -44,7 +44,12 @@
 
 `captured_at` - дата, к которой относится медиа: дата съемки или дата мероприятия. Это поле нужно для корректной сортировки Rückblick. Например, если фото мартовского мероприятия загрузили в июне, по `created_at` оно будет июньским, а по `captured_at` останется мартовским.
 
-Если `captured_at` не указано, система должна использовать дату связанного мероприятия `events.date` как fallback.
+Если `captured_at` не указано, система должна использовать дату связанного мероприятия `events.date` как fallback. Для общих медиа без привязки к мероприятию fallback - `created_at`.
+
+`media_scope` - область назначения медиа:
+
+- `event` - медиа связано с конкретным мероприятием;
+- `general` - медиа общего назначения, например короткий промо-ролик или изображение для главной страницы.
 
 ## 4. Хранение медиа
 
@@ -52,7 +57,8 @@
 
 В D1 должна храниться только метаинформация:
 
-- связь с мероприятием;
+- опциональная связь с мероприятием;
+- область назначения медиа (`event` или `general`);
 - тип медиа;
 - R2 object key;
 - публичный URL;
@@ -66,9 +72,11 @@
 Рекомендуемые R2-префиксы:
 
 - `event-media/{eventId}/{timestamp-or-uuid}.{ext}`;
-- `event-media-thumbnails/{eventId}/{timestamp-or-uuid}.jpg`.
+- `event-media-thumbnails/{eventId}/{timestamp-or-uuid}.jpg`;
+- `general-media/{purpose}/{timestamp-or-uuid}.{ext}`;
+- `general-media-thumbnails/{purpose}/{timestamp-or-uuid}.jpg`.
 
-`event_id` обязателен. Общие медиа без привязки к мероприятию не допускаются.
+`event_id` не является обязательным для всех медиа. Для `media_scope = 'event'` он обязателен, для `media_scope = 'general'` должен быть `NULL`. Общие медиа допускаются для материалов без конкретного мероприятия, например промо-роликов или изображений, которые оператор публикует на главной странице.
 
 При удалении мероприятия должны удаляться:
 
@@ -77,6 +85,8 @@
 - связанные thumbnail-файлы из R2.
 
 Для метаданных в D1 использовать `ON DELETE CASCADE`. Для физических файлов R2 нужна серверная логика в `deleteEvent(...)` или отдельном helper-е, потому что D1 cascade не удаляет R2-объекты автоматически.
+
+Важно: текущее удаление мероприятий уже блокирует hard-delete при активных регистрациях в `src/routes/api/admin/events/delete/+server.ts`, но `registrations.event_id` в текущей миграции создан без `ON DELETE CASCADE` или `ON DELETE SET NULL`. Поэтому перед подключением каскадного удаления медиа нужно отдельным этапом зафиксировать корректную процедуру удаления мероприятия с регистрациями.
 
 ## 5. Миграция БД
 
@@ -89,7 +99,10 @@
 ```sql
 CREATE TABLE IF NOT EXISTS event_media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+
+    media_scope TEXT NOT NULL DEFAULT 'event'
+        CHECK (media_scope IN ('event', 'general')),
 
     media_type TEXT NOT NULL CHECK (media_type IN ('image', 'video')),
 
@@ -126,6 +139,12 @@ CREATE TABLE IF NOT EXISTS event_media (
         (media_type = 'image' AND size_bytes <= 3145728)
         OR
         (media_type = 'video' AND size_bytes <= 31457280 AND duration_seconds IS NOT NULL AND duration_seconds <= 10)
+    ),
+
+    CHECK (
+        (media_scope = 'event' AND event_id IS NOT NULL)
+        OR
+        (media_scope = 'general' AND event_id IS NULL)
     )
 );
 
@@ -140,6 +159,20 @@ CREATE INDEX IF NOT EXISTS idx_event_media_rueckblick_captured
 
 CREATE INDEX IF NOT EXISTS idx_event_media_type
     ON event_media(media_type);
+
+CREATE INDEX IF NOT EXISTS idx_event_media_scope_homepage
+    ON event_media(media_scope, show_on_homepage, status);
+
+CREATE TABLE IF NOT EXISTS media_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    homepage_max_images INTEGER NOT NULL DEFAULT 300 CHECK (homepage_max_images >= 0),
+    homepage_max_videos INTEGER NOT NULL DEFAULT 30 CHECK (homepage_max_videos >= 0),
+    updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR IGNORE INTO media_settings (id, homepage_max_images, homepage_max_videos)
+VALUES (1, 300, 30);
 ```
 
 Эффективные пользовательские статусы в UI:
@@ -148,6 +181,7 @@ CREATE INDEX IF NOT EXISTS idx_event_media_type
 - `Homepage`: `show_on_homepage = 1`;
 - `Rückblick`: `show_on_rueckblick = 1`;
 - `Hidden`: `status = 'hidden'`;
+- `General`: дополнительный бейдж для `media_scope = 'general'`;
 - если `show_on_homepage = 1` и `show_on_rueckblick = 1`, показывать оба бейджа.
 
 ## 6. Серверная логика
@@ -162,7 +196,20 @@ CREATE INDEX IF NOT EXISTS idx_event_media_type
 - `getRueckblickMedia(db, filters)`;
 - `getRueckblickEvents(db)`;
 - `getEventMediaObjectKeys(db, eventId)`;
+- `getMediaSettings(db)`;
+- в будущем: `updateMediaSettings(...)`;
 - в будущем: `createEventMedia(...)`, `updateEventMediaVisibility(...)`, `deleteEventMedia(...)`.
+
+`getHomepageMedia(...)` должен учитывать настраиваемые лимиты из `media_settings`: по умолчанию не больше 300 фото и 30 видео для коллажа. Лимиты применяются на сервере, даже если в админке ошибочно опубликовано больше медиа.
+
+Обязательный этап перед реализацией удаления медиа вместе с мероприятием:
+
+- оставить блокировку hard-delete мероприятия при наличии активных регистраций;
+- в админке для такого сценария вести оператора через отмену мероприятия с причиной, отмену активных регистраций и уведомление пользователей;
+- для мероприятия с любыми регистрациями использовать безопасное soft-delete/скрытие: `status = 'cancelled'`, `is_listed = 0`, при необходимости отдельное поле `deleted_at`;
+- hard-delete разрешать только для мероприятий без регистраций либо после отдельной миграции, которая корректно сохраняет историю регистраций при удалении события;
+- при soft-delete не полагаться на `ON DELETE CASCADE` для `event_media`, а явно удалять/скрывать связанные медиа и R2-объекты через серверный helper;
+- логировать количество активных регистраций, факт отмены, результат рассылки и результат удаления R2-объектов.
 
 Добавить типы:
 
@@ -191,6 +238,7 @@ CREATE INDEX IF NOT EXISTS idx_event_media_type
    - `status != 'hidden'`;
    - фото: `media_type = 'image'` и `size_bytes <= 3 MB`;
    - видео: `media_type = 'video'`, `size_bytes <= 30 MB`, `duration_seconds <= 10`;
+   - применить лимиты из `media_settings`: по умолчанию максимум 300 фото и 30 видео;
    - сортировка: наиболее новые отобранные первыми, то есть `created_at DESC`.
 
 Файл: `src/routes/+page.svelte`
@@ -262,7 +310,7 @@ CREATE INDEX IF NOT EXISTS idx_event_media_type
 
 Фильтры:
 
-- мероприятие (`event_id`);
+- мероприятие (`event_id`), при выбранном мероприятии общие медиа `media_scope = 'general'` не попадают в результат;
 - дата от;
 - дата до.
 
@@ -273,7 +321,7 @@ CREATE INDEX IF NOT EXISTS idx_event_media_type
 
 Дата сортировки:
 
-- `COALESCE(event_media.captured_at, events.date)`;
+- `COALESCE(event_media.captured_at, events.date, event_media.created_at)`;
 - если обе даты отсутствуют или невалидны, fallback на `event_media.created_at`.
 
 Страница должна использовать пагинацию или ограниченную загрузку, чтобы не загружать большое количество видео сразу.
@@ -294,7 +342,9 @@ CREATE INDEX IF NOT EXISTS idx_event_media_type
 - фильтрация по мероприятию, дате, типу медиа и статусу;
 - сортировка;
 - предпросмотр;
-- удаление R2-файла вместе с D1-записью.
+- удаление R2-файла вместе с D1-записью;
+- TODO: загрузка оператором fallback-изображения для плитки видео, если у видео отсутствует thumbnail; сначала достаточно глобального fallback для всех таких видео, позднее можно добавить override на уровне конкретного видео;
+- настройки лимитов коллажа: оператор может редактировать максимальное количество фото и видео, доступных для коллажа на главной странице; значения по умолчанию - 300 фото и 30 видео.
 
 Клиентская проверка при загрузке:
 
@@ -302,6 +352,7 @@ CREATE INDEX IF NOT EXISTS idx_event_media_type
 - видео больше 30 MB отклонять до отправки;
 - видео длительностью больше 10 секунд отклонять до отправки;
 - длительность проверять на клиенте через временный object URL и metadata видео;
+- при публикации на главной предупреждать оператора, если после изменения будет превышен лимит фото или видео из `media_settings`;
 - показывать понятное сообщение об ошибке.
 
 Первая реализация не должна включать клиентскую обрезку и перекодирование в H.265.
@@ -333,7 +384,7 @@ R2-файл недоступен, но запись есть в БД:
 
 Видео без thumbnail:
 
-- показывается fallback-плитка с play-кнопкой;
+- показывается fallback-плитка с play-кнопкой; если оператор загрузил fallback-изображение, использовать его, иначе использовать встроенную нейтральную плитку;
 - видео запускается только после клика пользователя.
 
 Видео проигрывается, пользователь нажимает стрелку:
@@ -353,8 +404,11 @@ R2-файл недоступен, но запись есть в БД:
 
 Мероприятие удаляется:
 
-- D1-записи `event_media` удаляются через `ON DELETE CASCADE`;
-- R2-файлы удаляются серверной логикой до или во время удаления мероприятия;
+- если есть активные регистрации, hard-delete блокируется;
+- оператор сначала отменяет мероприятие с причиной, система отменяет активные регистрации и отправляет уведомления;
+- если у мероприятия есть любые регистрации, используется soft-delete/скрытие, чтобы не ломать историю регистраций;
+- hard-delete без регистраций удаляет D1-записи `event_media` через `ON DELETE CASCADE`;
+- R2-файлы удаляются серверной логикой до или во время hard-delete, а при soft-delete - отдельным helper-ом;
 - если R2-удаление частично не удалось, ошибка логируется.
 
 Невалидные query-параметры `/rueckblick`:
@@ -365,7 +419,8 @@ R2-файл недоступен, но запись есть в БД:
 Большая медиатека:
 
 - использовать pagination/limit;
-- не рендерить и не загружать все видео сразу.
+- не рендерить и не загружать все видео сразу;
+- сервер не возвращает в коллаж больше лимитов из `media_settings`: по умолчанию 300 фото и 30 видео.
 
 ## 12. Критерии готовности
 
@@ -392,10 +447,18 @@ Rückblick:
 База данных:
 
 - миграция создает `event_media`;
-- `event_id` обязателен;
+- `event_id` обязателен только для `media_scope = 'event'`;
+- общие медиа `media_scope = 'general'` хранятся без привязки к мероприятию;
 - связь с `events` использует `ON DELETE CASCADE`;
+- миграция создает `media_settings` с лимитами по умолчанию 300 фото и 30 видео;
 - одно медиа может быть одновременно опубликовано на главной и в Rückblick;
 - ограничения размера и длительности отражены в схеме и серверной логике.
+
+Удаление мероприятий:
+
+- мероприятие с активными регистрациями нельзя hard-delete без предварительной отмены регистраций и уведомления пользователей;
+- мероприятие с регистрациями удаляется безопасно через soft-delete/скрытие либо через отдельную миграцию, сохраняющую историю регистраций;
+- связанные event-медиа и R2-объекты удаляются или скрываются по явно описанной серверной процедуре.
 
 Проверки:
 
