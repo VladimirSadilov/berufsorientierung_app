@@ -2,6 +2,8 @@
 
 Ты работаешь в проекте `berufsorientierung_app`. Реализуй только базовую схему данных и TypeScript-типы для ТЗ `docs/media-collage-rueckblick_corrected.md`.
 
+Промпт должен быть безопасен для отдельной последовательной сессии: если нужные файлы уже частично созданы предыдущей попыткой, сначала сравни их с ТЗ и аккуратно дополни/исправь, не перезаписывая корректную существующую работу.
+
 ## Сбор контекста
 
 1. Перейди в корень проекта `berufsorientierung_app`.
@@ -49,6 +51,8 @@
 - `PublicEventMedia`;
 - `RueckblickMediaFilters`;
 - `MediaSettings`.
+
+`RueckblickMediaFilters` создай по ТЗ с нормализованными полями `sort`, `limit`, `offset`. Последующие DB-функции могут принимать `Partial<RueckblickMediaFilters>` для безопасных defaults, поэтому не создавай второй конфликтующий тип без необходимости.
 
 Экспортируй новые типы из `src/lib/types/index.ts`.
 
