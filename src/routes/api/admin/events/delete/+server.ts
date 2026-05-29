@@ -5,9 +5,9 @@
  *
  * Функциональность:
  * - Проверка существования мероприятия
- * - Проверка на наличие активных регистраций (если есть - предупреждение)
- * - Удаление QR-кодов из R2 Storage
- * - Удаление мероприятия из БД (каскадное удаление registrations и event_additional_fields)
+ * - Проверка на наличие любых регистраций
+ * - Удаление QR-кодов, постера и event-media файлов из R2 Storage
+ * - Удаление мероприятия из БД (каскадное удаление event_additional_fields и event_media)
  * - Логирование действия
  *
  * Требует: Admin права
@@ -54,27 +54,29 @@ export async function DELETE({ request, platform }: RequestEvent) {
 			return json({ error: 'Event not found' }, { status: 404 });
 		}
 
-		// Шаг 4: Проверка на активные регистрации
+		// Шаг 4: Проверка на любые регистрации.
+		// Hard-delete запрещен даже при отмененных registrations, чтобы не ломать историю.
 		const registrationsResult = await platform!.env.DB.prepare(
-			`SELECT COUNT(*) as count FROM registrations WHERE event_id = ? AND cancelled_at IS NULL`
+			`SELECT COUNT(*) as count FROM registrations WHERE event_id = ?`
 		)
 			.bind(eventId)
 			.first<{ count: number }>();
 
-		const activeRegistrations = registrationsResult?.count || 0;
+		const registrationsCount = registrationsResult?.count || 0;
 
-		if (activeRegistrations > 0) {
+		if (registrationsCount > 0) {
 			return json(
 				{
-					error: 'Cannot delete event with active registrations',
-					message: `This event has ${activeRegistrations} active registration(s). Please cancel the event first to notify participants.`,
-					activeRegistrations,
+					error: 'Cannot delete event with registrations',
+					message: `This event has ${registrationsCount} registration(s). Hard-delete is blocked to preserve registration history. Cancel or hide the event instead.`,
+					registrationsCount,
 				},
 				{ status: 400 }
 			);
 		}
 
-		// Шаг 5: Удаление мероприятия (deleteEvent удаляет QR-коды и запись в БД)
+		// Шаг 5: Удаление мероприятия.
+		// deleteEvent собирает QR/poster и event-media R2 keys до cascade-delete.
 		await deleteEvent(platform!.env.DB, eventId, platform!.env.R2_BUCKET);
 
 		// Шаг 6: Логирование действия

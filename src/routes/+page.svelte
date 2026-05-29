@@ -14,14 +14,26 @@
 	import { _ } from 'svelte-i18n';
 	import EventCard from '$lib/components/events/EventCard.svelte';
 	import EventModal from '$lib/components/events/EventModal.svelte';
+	import HomepageMediaCollage from '$lib/components/media/HomepageMediaCollage.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import StarRating from '$lib/components/ui/StarRating.svelte';
 	import { user as userStore } from '$lib/stores/user';
 	import type { EventWithStats } from './+page.server';
+	import type { PublicEventMedia } from '$lib/types/eventMedia';
 	import type { PublicReview } from '$lib/types/review';
 
 	// Получаем данные из +page.server.ts
-	let { data } = $props<{ data: { events: EventWithStats[]; latestReviews: PublicReview[] } }>();
+	let { data } = $props<{
+		data: {
+			events: EventWithStats[];
+			homepageMedia: PublicEventMedia[];
+			latestReviews: PublicReview[];
+		};
+	}>();
+
+	const events = $derived(data.events ?? []);
+	const homepageMedia = $derived(data.homepageMedia ?? []);
+	const latestReviews = $derived(data.latestReviews ?? []);
 
 	// Состояние модального окна
 	let selectedEvent: EventWithStats | null = $state(null);
@@ -123,15 +135,17 @@
 		</div>
 
 		<!-- Список мероприятий или Empty state -->
-		{#if data.events.length > 0}
+		{#if events.length > 0}
 			<!-- Grid мероприятий (адаптивный: 1 колонка на mobile, 2 на tablet, 3 на desktop) -->
 			<div
 				class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:[grid-template-columns:repeat(auto-fit,minmax(20rem,22rem))] lg:justify-center lg:max-w-6xl lg:mx-auto"
 			>
-				{#each data.events as event (event.id)}
+				{#each events as event (event.id)}
 					<EventCard {event} onCardClick={() => openEventModal(event)} />
 				{/each}
 			</div>
+		{:else if homepageMedia.length > 0}
+			<HomepageMediaCollage media={homepageMedia} />
 		{:else}
 			<!-- Empty state -->
 			<div
@@ -151,10 +165,10 @@
 					></path>
 				</svg>
 				<h3 class="text-xl font-semibold text-gray-900 mb-2">
-					{$_('homepage.events.empty.title')}
+					{$_('homepage.events.mediaFallback.title')}
 				</h3>
 				<p class="text-gray-600 mb-6 max-w-md mx-auto">
-					{$_('homepage.events.empty.message')}
+					{$_('homepage.events.mediaFallback.message')}
 				</p>
 
 				<!-- Кнопка обновления -->
@@ -166,7 +180,7 @@
 	</section>
 
 	<!-- Секция отзывов -->
-	{#if data.latestReviews && data.latestReviews.length > 0}
+	{#if latestReviews.length > 0}
 		<section class="container mx-auto px-4 py-8 sm:py-12">
 			<!-- Заголовок секции -->
 			<div class="mb-8 lg:text-center lg:max-w-3xl lg:mx-auto">
@@ -182,7 +196,7 @@
 			<div
 				class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 xl:[grid-template-columns:repeat(auto-fit,minmax(16rem,18rem))] xl:justify-center xl:max-w-7xl xl:mx-auto"
 			>
-				{#each data.latestReviews as review (review.id)}
+				{#each latestReviews as review (review.id)}
 					<article
 						class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5 flex flex-col"
 					>

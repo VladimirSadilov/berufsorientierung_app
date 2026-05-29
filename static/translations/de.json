@@ -956,6 +956,7 @@
 		"home": "Startseite",
 		"events": "Veranstaltungen",
 		"reviews": "Bewertungen",
+		"rueckblick": "Rückblick",
 		"profile": "Profil",
 		"admin": "Admin",
 		"login": "Anmelden",
@@ -989,12 +990,51 @@
 				"title": "Keine Veranstaltungen verfügbar",
 				"message": "Aktuell sind keine Veranstaltungen geplant. Schauen Sie bald wieder vorbei!",
 				"refresh": "Seite aktualisieren"
+			},
+			"mediaFallback": {
+				"title": "Neue Highlights kommen bald",
+				"message": "Wir bereiten neue Veranstaltungen und Medien-Highlights vor. Bitte schauen Sie bald wieder vorbei."
 			}
 		},
 		"reviews": {
 			"title": "Was unsere Teilnehmer sagen",
 			"subtitle": "Erfahrungen und Bewertungen unserer Veranstaltungen",
 			"allLink": "Alle Bewertungen anzeigen"
+		}
+	},
+	"rueckblick": {
+		"page": {
+			"title": "Rückblick",
+			"heading": "Rückblick",
+			"description": "Fotos und Videos aus vergangenen Veranstaltungen und Projekten."
+		},
+		"filters": {
+			"event": "Veranstaltung",
+			"allEvents": "Alle Veranstaltungen",
+			"dateFrom": "Datum von",
+			"dateTo": "Datum bis",
+			"sort": "Sortierung",
+			"apply": "Filter anwenden",
+			"reset": "Filter zurücksetzen"
+		},
+		"sort": {
+			"newest": "Neueste zuerst",
+			"oldest": "Älteste zuerst"
+		},
+		"empty": {
+			"title": "Noch keine Medien vorhanden",
+			"description": "Veröffentlichte Fotos und Videos werden hier angezeigt."
+		},
+		"pagination": {
+			"label": "Rückblick Seitennavigation",
+			"previous": "Vorherige Seite",
+			"next": "Nächste Seite"
+		},
+		"media": {
+			"general": "Allgemeine Medien",
+			"play": "Video abspielen",
+			"imageUnavailable": "Bild nicht verfügbar",
+			"videoUnavailable": "Video nicht verfügbar"
 		}
 	},
 	"footer": {

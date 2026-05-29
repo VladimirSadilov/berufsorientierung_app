@@ -11,8 +11,10 @@
 import { getActiveEvents } from '$lib/server/db/events';
 import { getRegistrationCount, isUserRegistered } from '$lib/server/db/registrations';
 import { getLatestApprovedReviews } from '$lib/server/db/reviews';
+import { DB } from '$lib/server/db';
 import { extractTokenFromRequest, verifyToken } from '$lib/server/auth';
 import type { Event } from '$lib/types/event';
+import type { PublicEventMedia } from '$lib/types/eventMedia';
 import type { PublicReview } from '$lib/types/review';
 
 /**
@@ -101,8 +103,19 @@ export const load = async ({ platform, request }: { platform: any; request: Requ
 			// Продолжаем работу даже если отзывы не загрузились
 		}
 
+		let homepageMedia: PublicEventMedia[] = [];
+		if (eventsWithStats.length === 0) {
+			try {
+				homepageMedia = await DB.eventMedia.getHomepageMedia(db);
+			} catch (mediaError) {
+				console.error('Error loading homepage media:', mediaError);
+				// Продолжаем работу: UI сможет показать fallback-сообщение
+			}
+		}
+
 		return {
 			events: eventsWithStats,
+			homepageMedia,
 			latestReviews,
 		};
 	} catch (error) {
@@ -112,6 +125,7 @@ export const load = async ({ platform, request }: { platform: any; request: Requ
 		// SvelteKit автоматически обработает это в +page.svelte
 		return {
 			events: [],
+			homepageMedia: [],
 			latestReviews: [],
 		};
 	}

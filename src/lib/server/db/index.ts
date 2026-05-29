@@ -10,6 +10,7 @@
  * - DB.admin.* - управление администраторами
  * - DB.activityLog.* - логирование действий
  * - DB.gdpr.* - GDPR-операции (удаление данных)
+ * - DB.eventMedia.* - медиа главной страницы и Rueckblick
  *
  * ВАЖНО: Используется uppercase DB для агрегатора модулей,
  * чтобы избежать конфликта с локальными переменными db (инстанс D1Database).
@@ -24,6 +25,7 @@ import * as admin from './admin';
 import * as activityLog from './activityLog';
 import * as gdpr from './gdpr';
 import * as reviews from './reviews';
+import * as eventMedia from './eventMedia';
 
 // Экспорт всех модулей в единый объект DB (uppercase для избежания конфликтов)
 export const DB = {
@@ -35,6 +37,7 @@ export const DB = {
 	activityLog,
 	gdpr,
 	reviews,
+	eventMedia,
 };
 
 /**

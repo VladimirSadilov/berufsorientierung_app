@@ -23,6 +23,111 @@ import type { EventCreateData, Event as EventType } from '$lib/types/event';
 // Mock D1 Database (для реального тестирования нужно использовать Miniflare или Wrangler)
 const mockDb = {} as D1Database;
 
+interface RecordedQuery {
+	query: string;
+	params: unknown[];
+}
+
+function createRecordingDb<T>(results: T[]): { db: D1Database; calls: RecordedQuery[] } {
+	const calls: RecordedQuery[] = [];
+
+	const db = {
+		prepare: (query: string) => ({
+			bind: (...params: unknown[]) => ({
+				all: async () => {
+					calls.push({ query, params });
+					return { results, success: true };
+				},
+			}),
+		}),
+	} as unknown as D1Database;
+
+	return { db, calls };
+}
+
+function createEventRow(overrides: Partial<EventType> = {}): EventType & { current_participants: number } {
+	return {
+		id: 1,
+		title_de: 'Test Event',
+		title_en: null,
+		title_ru: null,
+		title_uk: null,
+		description_de: 'Description',
+		description_en: null,
+		description_ru: null,
+		description_uk: null,
+		requirements_de: null,
+		requirements_en: null,
+		requirements_ru: null,
+		requirements_uk: null,
+		location_de: 'Dresden',
+		location_en: null,
+		location_ru: null,
+		location_uk: null,
+		date: '2025-10-22T10:00:00.000Z',
+		end_date: null,
+		registration_deadline: '2025-10-21T10:00:00.000Z',
+		max_participants: 30,
+		telegram_link: null,
+		whatsapp_link: null,
+		qr_telegram_url: null,
+		qr_whatsapp_url: null,
+		poster_url: null,
+		is_listed: 1,
+		status: 'active',
+		cancelled_at: null,
+		cancellation_reason: null,
+		created_at: '2025-10-01T10:00:00.000Z',
+		updated_at: '2025-10-01T10:00:00.000Z',
+		created_by: 1,
+		current_participants: 0,
+		...overrides,
+	};
+}
+
+function createDeleteEventDb(event: EventType): {
+	db: D1Database;
+	operations: string[];
+} {
+	const operations: string[] = [];
+
+	const db = {
+		prepare: (query: string) => ({
+			bind: (..._params: unknown[]) => ({
+				first: async () => {
+					operations.push('select-event');
+					return event;
+				},
+				all: async () => {
+					if (query.includes('FROM event_media')) {
+						operations.push('select-event-media-keys');
+						return {
+							results: [
+								{
+									object_key: 'event-media/1/photo.jpg',
+									thumbnail_object_key: 'event-media-thumbnails/1/photo.jpg',
+								},
+							],
+							success: true,
+						};
+					}
+
+					return { results: [], success: true };
+				},
+				run: async () => {
+					if (query.includes('DELETE FROM events')) {
+						operations.push('delete-event-row');
+					}
+
+					return { success: true, meta: { changes: 1 } };
+				},
+			}),
+		}),
+	} as unknown as D1Database;
+
+	return { db, operations };
+}
+
 describe('Events Database Utilities', () => {
 	describe('createEvent', () => {
 		it('should create event with required fields', async () => {
@@ -75,6 +180,34 @@ describe('Events Database Utilities', () => {
 			expect('cancelled').toBe('cancelled');
 
 			// draft -> cancelled не должно быть возможным без публикации
+		});
+	});
+
+	describe('deleteEvent', () => {
+		it('should collect event media keys and delete R2 files before deleting event row', async () => {
+			const event = createEventRow({
+				qr_telegram_url: 'https://r2.example.com/qr/telegram.png',
+				qr_whatsapp_url: null,
+				poster_url: 'event-posters/poster.jpg',
+			});
+			const { db, operations } = createDeleteEventDb(event);
+			const r2Bucket = {
+				delete: async (key: string) => {
+					operations.push(`delete-r2:${key}`);
+				},
+			} as any;
+
+			await deleteEvent(db, event.id, r2Bucket);
+
+			expect(operations).toEqual([
+				'select-event',
+				'select-event-media-keys',
+				'delete-r2:qr/telegram.png',
+				'delete-r2:event-posters/poster.jpg',
+				'delete-r2:event-media/1/photo.jpg',
+				'delete-r2:event-media-thumbnails/1/photo.jpg',
+				'delete-event-row',
+			]);
 		});
 	});
 
@@ -162,6 +295,33 @@ describe('Events Database Utilities', () => {
 	});
 
 	describe('Date handling', () => {
+		it('should use end_date fallback when loading active events', async () => {
+			const ongoingEvent = createEventRow({
+				date: '2025-10-22T10:00:00.000Z',
+				end_date: '2025-10-22T18:00:00.000Z',
+			});
+			const { db, calls } = createRecordingDb([ongoingEvent]);
+
+			const result = await getActiveEvents(db);
+
+			expect(result).toEqual([ongoingEvent]);
+			expect(calls[0].query).toContain('COALESCE(e.end_date, e.date) >= ?');
+			expect(calls[0].query).toContain('ORDER BY e.date ASC');
+			expect(calls[0].query).not.toContain('is_listed');
+			expect(typeof calls[0].params[0]).toBe('string');
+		});
+
+		it('should use end_date fallback when loading past events', async () => {
+			const { db, calls } = createRecordingDb<EventType & { current_participants: number }>([]);
+
+			const result = await getPastEvents(db);
+
+			expect(result).toEqual([]);
+			expect(calls[0].query).toContain('COALESCE(e.end_date, e.date) < ?');
+			expect(calls[0].query).not.toContain('is_listed');
+			expect(typeof calls[0].params[0]).toBe('string');
+		});
+
 		it('should correctly compare dates for active events', () => {
 			const now = new Date('2025-10-22T12:00:00Z');
 			const futureEvent = new Date('2025-12-01T10:00:00Z');

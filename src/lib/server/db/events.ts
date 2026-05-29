@@ -13,6 +13,8 @@ import type {
 	EventWithFields,
 } from '$lib/types/event';
 import { setEventFields, getEventFields } from './eventFields';
+import { getEventMediaObjectKeys } from './eventMedia';
+import { deleteFileByUrl } from '$lib/server/storage/r2';
 
 /**
  * Создаёт новое мероприятие
@@ -225,8 +227,8 @@ export async function updateEvent(
 
 /**
  * Удаляет мероприятие
- * Автоматически удаляет связанные QR-коды из R2
- * Дополнительные поля удаляются автоматически (ON DELETE CASCADE)
+ * Автоматически удаляет связанные QR-коды, постер и event-media файлы из R2.
+ * Дополнительные поля и event_media удаляются автоматически (ON DELETE CASCADE).
  *
  * @param db - D1 Database instance
  * @param id - ID мероприятия
@@ -241,19 +243,21 @@ export async function deleteEvent(db: D1Database, id: number, r2Bucket?: R2Bucke
 			throw new Error(`Event with id ${id} not found`);
 		}
 
-		// Удаляем QR-коды и постер из R2, если bucket предоставлен
-		if (r2Bucket) {
-			const urlsToDelete = [
-				event.qr_telegram_url,
-				event.qr_whatsapp_url,
-				event.poster_url,
-			].filter((url): url is string => url !== null);
+		// Собираем R2-ключи до DELETE FROM events: event_media удалится через ON DELETE CASCADE.
+		const eventMediaObjectKeys = await getEventMediaObjectKeys(db, id);
+		const r2Targets = [
+			event.qr_telegram_url,
+			event.qr_whatsapp_url,
+			event.poster_url,
+			...eventMediaObjectKeys,
+		].filter((target): target is string => Boolean(target));
 
-			if (urlsToDelete.length > 0) {
-				const { deleteFilesByUrls } = await import('$lib/server/storage/r2');
-				const deletedCount = await deleteFilesByUrls(r2Bucket, urlsToDelete);
-				console.log(
-					`Deleted ${deletedCount} files (QR codes/poster) from R2 for event ${id}`
+		if (r2Targets.length > 0) {
+			if (r2Bucket) {
+				await deleteEventFilesBestEffort(r2Bucket, r2Targets, id);
+			} else {
+				console.warn(
+					`R2 bucket not available while deleting event ${id}; skipped ${r2Targets.length} file(s)`
 				);
 			}
 		}
@@ -270,6 +274,36 @@ export async function deleteEvent(db: D1Database, id: number, r2Bucket?: R2Bucke
 			`Failed to delete event: ${error instanceof Error ? error.message : 'Unknown error'}`
 		);
 	}
+}
+
+async function deleteEventFilesBestEffort(
+	r2Bucket: R2Bucket,
+	targets: string[],
+	eventId: number
+): Promise<void> {
+	const uniqueTargets = [...new Set(targets)];
+	const results = await Promise.allSettled(
+		uniqueTargets.map((target) => deleteFileByUrl(r2Bucket, target))
+	);
+	let deletedCount = 0;
+
+	results.forEach((result, index) => {
+		const target = uniqueTargets[index];
+
+		if (result.status === 'fulfilled') {
+			deletedCount += 1;
+			return;
+		}
+
+		console.warn(
+			`Failed to delete R2 object for event ${eventId}: ${target}`,
+			result.reason
+		);
+	});
+
+	console.log(
+		`Deleted ${deletedCount}/${uniqueTargets.length} R2 file(s) for event ${eventId}`
+	);
 }
 
 /**
@@ -391,6 +425,8 @@ export async function getAllEvents(
  */
 export async function getActiveEvents(db: D1Database): Promise<Event[]> {
 	try {
+		const now = new Date().toISOString();
+
 		const result = await db
 			.prepare(
 				`SELECT 
@@ -399,10 +435,11 @@ export async function getActiveEvents(db: D1Database): Promise<Event[]> {
 				FROM events e
 				LEFT JOIN registrations r ON e.id = r.event_id
 				WHERE e.status = 'active'
-				  AND datetime(replace(COALESCE(e.end_date, e.date), 'T', ' ')) > datetime('now')
+				  AND COALESCE(e.end_date, e.date) >= ?
 				GROUP BY e.id
 				ORDER BY e.date ASC`
 			)
+			.bind(now)
 			.all<Event & { current_participants: number }>();
 
 		return result.results || [];
@@ -432,7 +469,7 @@ export async function getPastEvents(db: D1Database): Promise<Event[]> {
 					COUNT(DISTINCT CASE WHEN r.cancelled_at IS NULL THEN r.id END) as current_participants
 				FROM events e
 				LEFT JOIN registrations r ON e.id = r.event_id
-				WHERE e.date < ?
+				WHERE COALESCE(e.end_date, e.date) < ?
 				GROUP BY e.id
 				ORDER BY e.date DESC`
 			)

@@ -21,5 +21,8 @@ export * from './admin';
 // Review types
 export * from './review';
 
+// Event media types
+export * from './eventMedia';
+
 // API types
 export * from './api';

@@ -966,6 +966,7 @@
 		"home": "Home",
 		"events": "Events",
 		"reviews": "Reviews",
+		"rueckblick": "Retrospective",
 		"profile": "Profile",
 		"admin": "Admin",
 		"login": "Login",
@@ -999,12 +1000,51 @@
 				"title": "No events available",
 				"message": "There are currently no scheduled events. Please check back soon!",
 				"refresh": "Refresh page"
+			},
+			"mediaFallback": {
+				"title": "New highlights are coming",
+				"message": "We are preparing new events and media highlights. Please check back soon."
 			}
 		},
 		"reviews": {
 			"title": "What Our Participants Say",
 			"subtitle": "Experiences and reviews from our events",
 			"allLink": "View all reviews"
+		}
+	},
+	"rueckblick": {
+		"page": {
+			"title": "Retrospective",
+			"heading": "Retrospective",
+			"description": "Photos and videos from past events and projects."
+		},
+		"filters": {
+			"event": "Event",
+			"allEvents": "All events",
+			"dateFrom": "Date from",
+			"dateTo": "Date to",
+			"sort": "Sort order",
+			"apply": "Apply filters",
+			"reset": "Reset filters"
+		},
+		"sort": {
+			"newest": "Newest first",
+			"oldest": "Oldest first"
+		},
+		"empty": {
+			"title": "No media yet",
+			"description": "Published photos and videos will appear here."
+		},
+		"pagination": {
+			"label": "Retrospective pagination",
+			"previous": "Previous page",
+			"next": "Next page"
+		},
+		"media": {
+			"general": "General media",
+			"play": "Play video",
+			"imageUnavailable": "Image unavailable",
+			"videoUnavailable": "Video unavailable"
 		}
 	},
 	"footer": {

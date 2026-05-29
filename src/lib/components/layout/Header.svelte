@@ -31,6 +31,7 @@
 		{ href: '/', label: $_('nav.home'), requireAuth: false },
 		{ href: '/events', label: $_('nav.events'), requireAuth: false },
 		{ href: '/reviews', label: $_('nav.reviews'), requireAuth: false },
+		{ href: '/rueckblick', label: $_('nav.rueckblick'), requireAuth: false },
 		...(currentUser
 			? [
 					{ href: '/profile', label: $_('nav.profile'), requireAuth: true },
@@ -547,6 +548,14 @@
 			font-size: 1.5rem;
 		}
 
+	}
+
+	/* Desktop Breakpoint (1024px) */
+	@media (min-width: 1024px) {
+		.container {
+			padding: 1rem 2rem;
+		}
+
 		.nav-desktop {
 			display: flex;
 		}
@@ -564,12 +573,7 @@
 		}
 	}
 
-	/* Desktop Breakpoint (1024px) */
-	@media (min-width: 1024px) {
-		.container {
-			padding: 1rem 2rem;
-		}
-
+	@media (min-width: 1280px) {
 		.nav-list {
 			gap: 1rem;
 		}
